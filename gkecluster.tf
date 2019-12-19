@@ -53,3 +53,48 @@ provider "google" {
 #     ip_cidr_range = "192.168.10.0/24"
 #   }
 #}
+
+
+
+
+resource "kubernetes_pod" "nginx" {
+  metadata {
+    name = "nginx-example"
+    labels = {
+      App = "nginx"
+    }
+  }
+
+  spec {
+    container {
+      image = "gcr.io/hello-minikube-zero-install/hello-node "
+      name  = "example"
+
+      port {
+        container_port = 80
+      }
+    }
+  }
+}
+
+
+resource "kubernetes_service" "nginx" {
+  metadata {
+    name = "nginx-example"
+  }
+  spec {
+    selector = {
+      App = kubernetes_pod.nginx.metadata[0].labels.App
+    }
+    port {
+      port        = 80
+      target_port = 80
+    }
+
+    type = "LoadBalancer"
+  }
+}
+
+output "lb_ip" {
+  value = kubernetes_service.nginx.load_balancer_ingress[0].ip
+}
