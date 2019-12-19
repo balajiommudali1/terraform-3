@@ -3,7 +3,16 @@ resource "google_container_cluster" "gke-cluster" {
   network            = "default"
   location               = "us-central1-a"
   initial_node_count = 3
+  private_cluster_config { 
+  enable_private_nodes  = true
+  enable_private_endpoint = true
+  master_ipv4_cidr_block = "10.38.41.0/28"
+
+  }
   
+ip_allocation_policy  {
+cluster_ipv4_cidr_block  = "10.31.0.0/21"
+}
   addons_config {
     http_load_balancing {
       disabled = false
@@ -14,6 +23,12 @@ resource "google_container_cluster" "gke-cluster" {
     }
   }
 
+  master_authorized_networks_config {
+    cidr_blocks {
+        cidr_block   = "10.55.0.0/16"
+        display_name = "azai"
+      }
+  }
 }
 
 provider "google" {
@@ -22,3 +37,19 @@ provider "google" {
   region      = "us-central1"
 }
 
+
+# resource "google_compute_network" "nwrk" {
+#   name                    = "test-network"
+#   auto_create_subnetworks = true
+# }
+# 
+# resource "google_compute_subnetwork" "network-with-private-secondary-ip-ranges" {
+#   name          = "test-subnetwork"
+#   ip_cidr_range = "10.2.0.0/16"
+#   region        = "us-central1"
+#   network       = google_compute_network.nwrk.self_link
+#   secondary_ip_range {
+#     range_name    = "tf-test-secondary-range-update1"
+#     ip_cidr_range = "192.168.10.0/24"
+#   }
+#}
