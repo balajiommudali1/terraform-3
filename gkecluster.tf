@@ -1,5 +1,5 @@
 resource "google_container_cluster" "mycluster" {
-  name               = "cptest12"
+  name               = "cptest15"
   network            = "default"
   location               = "us-central1-a"
   initial_node_count = 3
@@ -11,6 +11,21 @@ resource "google_container_cluster" "mycluster" {
     horizontal_pod_autoscaling {
       disabled = false
     }
+  }
+master_authorized_networks_config {
+  cidr_blocks {
+      cidr_block   = "10.128.0.0/20"
+      display_name = "azai"
+    }
+}
+
+ip_allocation_policy  {
+cluster_ipv4_cidr_block  = "10.31.0.0/21"
+}
+  private_cluster_config {
+    enable_private_endpoint = true
+    enable_private_nodes    = true
+    master_ipv4_cidr_block  = "172.16.0.0/28"
   }
 
 }
@@ -94,3 +109,27 @@ provider "kubernetes" {
   client_key = base64decode(google_container_cluster.mycluster.master_auth[0].client_key)
   cluster_ca_certificate = base64decode(google_container_cluster.mycluster.master_auth[0].cluster_ca_certificate)
 }
+
+
+
+#resource "google_compute_instance" "shell" {
+#  name         = "shell"
+#    machine_type = "n1-standard-1"
+#	  zone         = "us-central1-a"
+#
+#
+#  boot_disk {
+#      initialize_params {
+#	        image = "centos-cloud/centos-8"
+#			    }
+#				  }
+#
+#  network_interface {
+#    network = "default"
+#
+#    access_config {
+#      // Ephemeral IP
+#    }
+#  }
+#
+#	  }
