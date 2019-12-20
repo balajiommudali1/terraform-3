@@ -1,18 +1,8 @@
-resource "google_container_cluster" "gke-cluster" {
-  name               = "cptest6"
+resource "google_container_cluster" "mycluster" {
+  name               = "cptest12"
   network            = "default"
   location               = "us-central1-a"
   initial_node_count = 3
-  private_cluster_config { 
-  enable_private_nodes  = true
-  enable_private_endpoint = true
-  master_ipv4_cidr_block = "10.38.41.0/28"
-
-  }
-  
-ip_allocation_policy  {
-cluster_ipv4_cidr_block  = "10.31.0.0/21"
-}
   addons_config {
     http_load_balancing {
       disabled = false
@@ -23,12 +13,6 @@ cluster_ipv4_cidr_block  = "10.31.0.0/21"
     }
   }
 
-  master_authorized_networks_config {
-    cidr_blocks {
-        cidr_block   = "10.55.0.0/16"
-        display_name = "azai"
-      }
-  }
 }
 
 provider "google" {
@@ -67,11 +51,11 @@ resource "kubernetes_pod" "nginx" {
 
   spec {
     container {
-      image = "gcr.io/hello-minikube-zero-install/hello-node "
+      image = "gcr.io/hello-minikube-zero-install/hello-node"
       name  = "example"
 
       port {
-        container_port = 80
+        container_port = 8080
       }
     }
   }
@@ -87,8 +71,8 @@ resource "kubernetes_service" "nginx" {
       App = kubernetes_pod.nginx.metadata[0].labels.App
     }
     port {
-      port        = 80
-      target_port = 80
+      port        = 8080
+      target_port = 8080
     }
 
     type = "LoadBalancer"
@@ -97,4 +81,16 @@ resource "kubernetes_service" "nginx" {
 
 output "lb_ip" {
   value = kubernetes_service.nginx.load_balancer_ingress[0].ip
+}
+
+data "google_client_config" "default" {}
+
+provider "kubernetes" {
+  load_config_file = false
+  host = google_container_cluster.mycluster.endpoint
+  token = data.google_client_config.default.access_token
+
+  client_certificate = base64decode(google_container_cluster.mycluster.master_auth[0].client_certificate)
+  client_key = base64decode(google_container_cluster.mycluster.master_auth[0].client_key)
+  cluster_ca_certificate = base64decode(google_container_cluster.mycluster.master_auth[0].cluster_ca_certificate)
 }
